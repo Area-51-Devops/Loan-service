@@ -12,6 +12,9 @@ env:
 jobs:
   ci:
     uses: Area-51-Devops/ci-templates/.github/workflows/common-ci.yml@main
+    permissions:
+      contents: write      
+      packages: read
     with:
       working_directory: "."
       image_name: "loan-service"
