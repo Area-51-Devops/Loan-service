@@ -6,14 +6,12 @@ on:
   pull_request:
     branches: [main]
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   ci:
-    permissions:
-      contents: write
-      packages: read
-
     uses: Area-51-Devops/ci-templates/.github/workflows/common-ci.yml@main
-
     with:
       working_directory: "."
       image_name: "loan-service"
