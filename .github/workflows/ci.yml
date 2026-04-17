@@ -2,12 +2,14 @@ name: Loan Service CI
 
 on:
   push:
-    branches: ["**"]
+    paths:
+      - 'services/loan-service/**'
+      - 'services/shared/**'
   pull_request:
-    branches: [main]
-
-env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+    paths:
+      - 'services/loan-service/**'
+      - 'services/shared/**'
+  workflow_dispatch:
 
 jobs:
   ci:
@@ -16,11 +18,11 @@ jobs:
       contents: write      
       packages: read
     with:
-      working_directory: "."
+      working_directory: "services/loan-service"
       image_name: "loan-service"
       service-name: "loan-service"
-      docker_context: "."
-      dockerfile_path: "Dockerfile"
+      docker_context: "services"
+      dockerfile_path: "loan-service/Dockerfile"
       run_build: false
       sonar_project_key: "loan-service"
     secrets:
@@ -33,4 +35,4 @@ jobs:
       SMTP_PORT: ${{ secrets.SMTP_PORT }}
       SMTP_USERNAME: ${{ secrets.SMTP_USERNAME }}
       SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
-      EMAIL_TO: ${{ secrets.EMAIL_TO }}
+      EMAIL_TO: ${{ secrets.EMAIL_TO }}

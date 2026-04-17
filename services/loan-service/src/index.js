@@ -5,17 +5,18 @@ const express = require('express');
 const cors    = require('cors');
 const mysql   = require('mysql2/promise');
 const amqp    = require('amqplib');
+const axios   = require('axios');
 
 const { logger }              = require('../shared/logger');
 const { requestIdMiddleware }  = require('../shared/requestId');
 const { errorMiddleware, createError } = require('../shared/errorMiddleware');
+const { authMiddleware, adminMiddleware } = require('../shared/authMiddleware');
 
 const PORT        = process.env.PORT            || 3005;
 const MQ_URL      = process.env.MQ_URL          || 'amqp://rabbitmq';
 const ACCOUNT_SVC = process.env.ACCOUNT_SVC_URL || 'http://account-service:3002';
-const EXCHANGE = 'banking_events';
+const EXCHANGE    = 'banking_events';
 
-const axios = require('axios');
 const accountClient = axios.create({ baseURL: ACCOUNT_SVC, timeout: 10000 });
 
 let pool;
@@ -126,30 +127,7 @@ app.get('/health/liveness',  async (req, res, next) => {
 app.get('/health/readiness', (req, res) => res.json({ status: isStarted ? 'READY' : 'NOT_READY', service: 'loan-service' }));
 app.get('/health',           (req, res) => res.json({ status: 'UP', service: 'loan-service' }));
 
-const jwt = require('jsonwebtoken');
-const JWT_SECRET = process.env.JWT_SECRET || 'nexus_banking_secret';
-
-const authMiddleware = (req, res, next) => {
-  try {
-    const authHeader = req.headers.authorization;
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return next(createError(401, 'UNAUTHORIZED', 'Missing or invalid authorization header'));
-    }
-    const token = authHeader.split(' ')[1];
-    req.user = jwt.verify(token, JWT_SECRET);
-    next();
-  } catch (err) {
-    next(createError(401, 'INVALID_TOKEN', 'Token is invalid or expired'));
-  }
-};
-
-const adminMiddleware = (req, res, next) => {
-  if (req.user && req.user.role === 'ADMIN') {
-    next();
-  } else {
-    next(createError(403, 'FORBIDDEN', 'Requires admin privileges'));
-  }
-};
+// authMiddleware and adminMiddleware are imported from ../shared/authMiddleware
 
 // ── EMI Calculator ─────────────────────────────
 app.post('/loans/emi', (req, res, next) => {
@@ -334,4 +312,7 @@ app.use(errorMiddleware);
 
 app.listen(PORT, () => logger.info({ port: PORT }, 'loan-service listening'));
 
-init().catch(err => { logger.fatal({ err }, 'loan-service failed'); process.exit(1); });
+init().catch((err) => {
+  logger.fatal({ err }, 'loan-service failed to initialise');
+  process.exit(1);
+});
